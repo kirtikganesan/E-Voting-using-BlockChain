@@ -74,6 +74,35 @@ app.post('/api/login', (req, res) => {
   });
 });
 
+app.get('/api/candidates', (req, res) => {
+  const query = 'SELECT * FROM candidates';
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching candidates:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
+// Add a new candidate
+app.post('/api/candidates', (req, res) => {
+  const { name, age, party, qualification } = req.body;
+
+  if (age < 18) {
+    return res.status(400).json({ error: 'Candidate must be at least 18 years old' });
+  }
+
+  const insertQuery = 'INSERT INTO candidates (name, age, party, qualification) VALUES (?, ?, ?, ?)';
+  db.query(insertQuery, [name, age, party, qualification], (err, results) => {
+    if (err) {
+      console.error('Error inserting candidate:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json({ message: 'Candidate registered successfully' });
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

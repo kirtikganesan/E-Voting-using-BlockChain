@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import Layout from '../../components/Layout';
 
 export default function AddCandidate() {
@@ -8,12 +9,8 @@ export default function AddCandidate() {
     party: '',
     qualification: ''
   });
+  const [modalMessage, setModalMessage] = useState('');
   const [showModal, setShowModal] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowModal(true);
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -21,6 +18,20 @@ export default function AddCandidate() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const response = await axios.post('http://localhost:5000/api/candidates', formData);
+      setModalMessage('Candidate registration successful!');
+      setShowModal(true);
+      setFormData({ name: '', age: '', party: '', qualification: '' }); // Reset form
+    } catch (error: any) {
+      setModalMessage(error.response?.data?.error || 'Error registering candidate');
+      setShowModal(true);
+    }
   };
 
   return (
@@ -31,9 +42,7 @@ export default function AddCandidate() {
         <div className="bg-white rounded-lg shadow p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Name
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Name</label>
               <input
                 type="text"
                 name="name"
@@ -45,9 +54,7 @@ export default function AddCandidate() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Age
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Age</label>
               <input
                 type="number"
                 name="age"
@@ -55,15 +62,13 @@ export default function AddCandidate() {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
-                min="25"
+                min="18"
                 max="80"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Party
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Party</label>
               <input
                 type="text"
                 name="party"
@@ -75,9 +80,7 @@ export default function AddCandidate() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Qualification
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Qualification</label>
               <input
                 type="text"
                 name="qualification"
@@ -100,8 +103,7 @@ export default function AddCandidate() {
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-xl">
-              <h3 className="text-lg font-semibold mb-4">Registration Successful</h3>
-              <p className="mb-4">The candidate has been registered successfully!</p>
+              <h3 className="text-lg font-semibold mb-4">{modalMessage}</h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
