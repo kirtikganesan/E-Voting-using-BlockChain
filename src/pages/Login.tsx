@@ -14,6 +14,8 @@ export default function Login() {
     if (type === 'admin') {
       // Admin login check: only allow if email is admin@gmail.com and password is 123
       if (email === 'admin@gmail.com' && password === '123') {
+        // Store the email in localStorage
+        localStorage.setItem("userEmail", email);
         navigate('/admin/candidates');
       } else {
         setError('Invalid credentials');
@@ -32,6 +34,8 @@ export default function Login() {
         if (!response.ok) {
           setError(data.error || 'Invalid credentials');
         } else {
+          // Store the email in localStorage after successful login
+          localStorage.setItem("userEmail", email);
           navigate('/voter/guidelines');
         }
       } catch (err) {

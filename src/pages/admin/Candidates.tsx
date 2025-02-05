@@ -25,6 +25,7 @@ export default function Candidates() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Age</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Party</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qualification</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Votes</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -35,6 +36,7 @@ export default function Candidates() {
                     <td className="px-6 py-4 whitespace-nowrap">{candidate.age}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{candidate.party}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{candidate.qualification}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{candidate.votes}</td>
                   </tr>
                 ))
               ) : (
