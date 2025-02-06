@@ -3,6 +3,8 @@ import axios from "axios";
 import Layout from "../../components/Layout";
 import { Candidate } from "../../types";
 
+type ElectionPhase = "registration" | "voting" | "results";
+
 export default function VotingArea() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [hasVoted, setHasVoted] = useState<boolean>(false);
@@ -10,14 +12,26 @@ export default function VotingArea() {
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [electionPhase, setElectionPhase] = useState<ElectionPhase>("registration");
 
   useEffect(() => {
-    // Assuming you have the user's email stored somewhere (e.g., in localStorage, context, or session)
-    const storedEmail = localStorage.getItem("userEmail"); // You can replace this with your email handling logic
+    const storedEmail = localStorage.getItem("userEmail");
     if (storedEmail) {
       setUserEmail(storedEmail);
     }
 
+    // Fetch the election phase
+    axios.get("/api/election-phase")
+      .then((response) => {
+        if (response.data.phase) {
+          setElectionPhase(response.data.phase);
+        } else {
+          setErrorMessage("Failed to load election phase.");
+        }
+      })
+      .catch(() => setErrorMessage("Failed to fetch election phase."));
+
+    // Fetch candidates
     axios.get("/api/candidates")
       .then((response) => {
         if (Array.isArray(response.data)) {
@@ -28,7 +42,7 @@ export default function VotingArea() {
       })
       .catch(() => setErrorMessage("Failed to load candidates."));
 
-    // Check voter status (Make sure to pass the email in the query string)
+    // Fetch voter status if email is available
     if (storedEmail) {
       axios.get(`/api/voter-status?email=${storedEmail}`)
         .then((response) => setHasVoted(response.data.hasVoted))
@@ -41,41 +55,18 @@ export default function VotingArea() {
       alert("You have already voted!");
       return;
     }
-
-    // Check if userEmail is valid
-    if (!userEmail || userEmail.trim() === "") {
-      setErrorMessage("User email is missing or invalid.");
-      return;
-    }
-
-    // Check if a candidate is selected and has a valid ID
-    if (!candidate || !candidate.id) {
-      setErrorMessage("Invalid candidate selected.");
-      return;
-    }
-
     setSelectedCandidate(candidate);
   };
 
   const confirmVote = async () => {
-    if (!selectedCandidate || !selectedCandidate.id) {
-      setErrorMessage("Invalid candidate. Please select a valid candidate.");
-      return;
-    }
-
-    // Check if userEmail is valid
-    if (!userEmail || userEmail.trim() === "") {
-      setErrorMessage("User email is missing.");
-      return;
-    }
-
+    if (!selectedCandidate) return;
     setLoading(true);
     setErrorMessage("");
 
     try {
       await axios.post("/api/vote", { email: userEmail, candidateId: selectedCandidate.id });
 
-      // Update local state
+      // Update state
       setCandidates((prev) =>
         prev.map((c) =>
           c.id === selectedCandidate.id ? { ...c, votes: c.votes + 1 } : c
@@ -101,29 +92,46 @@ export default function VotingArea() {
           </div>
         )}
 
-        <div className="grid gap-6">
-          {candidates.map((candidate) => (
-            <div key={candidate.id} className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">{candidate.name}</h2>
-                  <div className="text-gray-600 space-y-1">
-                    <p>Age: {candidate.age}</p>
-                    <p>Qualification: {candidate.qualification}</p>
-                    <p>Party: {candidate.party}</p>
+        {/* Display different UI based on election phase */}
+        {electionPhase === "registration" && (
+          <p className="text-xl font-semibold text-center text-gray-600">
+            Registration phase is going on.
+          </p>
+        )}
+
+        {electionPhase === "results" && (
+          <p className="text-xl font-semibold text-center text-gray-600">
+            Elections are over. Check the results tab for more info.
+          </p>
+        )}
+
+        {electionPhase === "voting" && (
+          <div className="grid gap-6">
+            {candidates.map((candidate) => (
+              <div key={candidate.id} className="bg-white rounded-lg shadow p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-semibold mb-2">{candidate.name}</h2>
+                    <div className="text-gray-600 space-y-1">
+                      <p>Age: {candidate.age}</p>
+                      <p>Qualification: {candidate.qualification}</p>
+                      <p>Party: {candidate.party}</p>
+                    </div>
                   </div>
+                  <button
+                    className={`px-4 py-2 text-white rounded ${
+                      hasVoted ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+                    }`}
+                    onClick={() => handleVote(candidate)}
+                    disabled={hasVoted}
+                  >
+                    Vote
+                  </button>
                 </div>
-                <button
-                  className={`px-4 py-2 text-white rounded ${hasVoted ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
-                  onClick={() => handleVote(candidate)}
-                  disabled={hasVoted}
-                >
-                  Vote
-                </button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Vote Confirmation Modal */}

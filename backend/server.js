@@ -173,6 +173,37 @@ app.post('/api/candidates', (req, res) => {
 // Endpoint to check voter status
 // Endpoint to check voter status
 
+app.get('/api/election-phase', (req, res) => {
+  db.query('SELECT phase FROM election_phase WHERE id = 1', (err, result) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
+    
+    // ✅ Fix: Check if the result has at least one row
+    if (result.length === 0) {
+      console.warn('No phase data found. Returning default phase.');
+      return res.json({ phase: 'registration' }); // Default phase
+    }
+
+    res.json({ phase: result[0].phase });
+  });
+});
+
+
+// Update election phase
+app.post('/api/election-phase', (req, res) => {
+  const { phase } = req.body;
+  if (!['registration', 'voting', 'results'].includes(phase)) {
+    return res.status(400).json({ error: 'Invalid phase' });
+  }
+
+  db.query('UPDATE election_phase SET phase = ? WHERE id = 1', [phase], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Election phase updated successfully' });
+  });
+});
+
 
 
 const PORT = process.env.PORT || 5000;
